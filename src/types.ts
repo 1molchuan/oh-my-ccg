@@ -180,12 +180,96 @@ export interface HudThresholds {
   budgetCritical: number;
 }
 
+// ─── Composite Orchestration ──────────────────────────────
+
+export interface TeamRalphState extends ModeState {
+  mode: 'ralph';
+  iteration: number;
+  maxIterations: number;
+  lastVerification: RalphVerification | null;
+  linkedTeam: {
+    enabled: boolean;
+    teamName: string | null;
+    workers: number;
+    completedTasks: number;
+    totalTasks: number;
+  };
+}
+
+export interface AutopilotCompositeState extends ModeState {
+  mode: 'autopilot';
+  rpiPhase: RpiPhase;
+  autoTransition: boolean;
+  linkedRalph: boolean;
+  linkedTeam: boolean;
+  contextPercent: number;
+  phasesCompleted: RpiPhase[];
+  currentAction: string | null;
+}
+
+// ─── Git Worktree ─────────────────────────────────────────
+
+export interface WorktreeInfo {
+  path: string;
+  branch: string;
+  taskId: string | null;
+  createdAt: string;
+  status: 'active' | 'merged' | 'abandoned';
+}
+
+export interface WorktreeConfig {
+  enabled: boolean;
+  baseDir: string;           // default: '../.oh-my-ccg-worktrees'
+  autoCleanup: boolean;
+  maxWorktrees: number;
+}
+
+// ─── HUD Metrics ──────────────────────────────────────────
+
+export interface HudMetrics {
+  sessionDuration: number;   // ms
+  sessionStartedAt: string;
+  estimatedCost: number;     // USD
+  cacheHitRate: number;      // 0-100
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  rateLimit: {
+    hourlyPercent: number;
+    weeklyPercent: number;
+    resetInMs: number | null;
+  };
+}
+
+// ─── i18n ─────────────────────────────────────────────────
+
+export type Locale = 'zh' | 'en';
+
+export interface I18nConfig {
+  locale: Locale;
+  fallback: Locale;
+}
+
+export type MessageKey =
+  | 'rpi.init' | 'rpi.research' | 'rpi.plan' | 'rpi.impl' | 'rpi.review'
+  | 'autopilot.started' | 'autopilot.cancelled' | 'autopilot.contextWarning'
+  | 'autopilot.phaseComplete' | 'autopilot.allComplete'
+  | 'ralph.started' | 'ralph.iteration' | 'ralph.passed' | 'ralph.failed' | 'ralph.maxReached'
+  | 'team.created' | 'team.complete' | 'team.progress'
+  | 'worktree.created' | 'worktree.merged' | 'worktree.cleaned'
+  | 'error.noRpiState' | 'error.invalidTransition' | 'error.modeNotActive'
+  | 'hud.contextWarning' | 'hud.contextCritical' | 'hud.budgetWarning';
+
+export type MessageCatalog = Record<MessageKey, string>;
+
 // ─── Config ────────────────────────────────────────────────
 
 export interface OhMyCcgConfig {
   version: string;
   hud: HudConfig;
   defaultModel: ModelTier;
+  locale: Locale;
   openspec: {
     enabled: boolean;
     autoInit: boolean;
@@ -196,10 +280,14 @@ export interface OhMyCcgConfig {
   };
   ralph: {
     maxIterations: number;
+    linkedTeam: boolean;
   };
   autopilot: {
     contextThreshold: number;
+    linkedRalph: boolean;
+    linkedTeam: boolean;
   };
+  worktree: WorktreeConfig;
 }
 
 // ─── State Manager ─────────────────────────────────────────

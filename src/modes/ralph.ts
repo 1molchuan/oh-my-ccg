@@ -1,4 +1,4 @@
-import type { RalphState, RalphVerification } from '../types.js';
+import type { RalphState, RalphVerification, TeamRalphState } from '../types.js';
 import { StateManager } from '../state/manager.js';
 
 export class RalphLoop {
@@ -16,10 +16,35 @@ export class RalphLoop {
   }
 
   /**
+   * Start ralph loop with team linking for composite orchestration.
+   */
+  startWithTeam(teamName: string, maxIterations = 10): TeamRalphState {
+    return this.state.initTeamRalph(teamName, maxIterations, 0);
+  }
+
+  /**
    * Get current ralph state.
    */
   getState(): RalphState | null {
     return this.state.getModeState<RalphState>('ralph');
+  }
+
+  /**
+   * Get team-linked ralph state (returns null if not in team-linked mode).
+   */
+  getTeamRalphState(): TeamRalphState | null {
+    const s = this.state.getModeState<TeamRalphState>('ralph');
+    if (s && 'linkedTeam' in s) return s;
+    return null;
+  }
+
+  /**
+   * Get the linked team name if a team is associated, otherwise null.
+   */
+  getLinkedTeam(): string | null {
+    const teamRalph = this.getTeamRalphState();
+    if (!teamRalph) return null;
+    return teamRalph.linkedTeam.enabled ? teamRalph.linkedTeam.teamName : null;
   }
 
   /**
@@ -86,15 +111,22 @@ export class RalphLoop {
     const ralph = this.getState();
     if (!ralph) return 'Ralph not active.';
 
+    const teamRalph = this.getTeamRalphState();
     const lines = [
       `Ralph Loop: ${ralph.active ? 'ACTIVE' : 'INACTIVE'}`,
       `Iteration: ${ralph.iteration}/${ralph.maxIterations}`,
     ];
 
+    if (teamRalph?.linkedTeam.enabled) {
+      const lt = teamRalph.linkedTeam;
+      lines.push(`Linked Team: ${lt.teamName ?? '(none)'}`);
+      lines.push(`  Workers: ${lt.workers} | Tasks: ${lt.completedTasks}/${lt.totalTasks}`);
+    }
+
     if (ralph.lastVerification) {
       const v = ralph.lastVerification;
       lines.push(`Last Verification: ${v.passed ? 'PASSED' : 'FAILED'}`);
-      lines.push(`  Tests: ${v.tests ? '✅' : '❌'} | Build: ${v.build ? '✅' : '❌'} | LSP: ${v.lsp ? '✅' : '❌'}`);
+      lines.push(`  Tests: ${v.tests ? 'OK' : 'FAIL'} | Build: ${v.build ? 'OK' : 'FAIL'} | LSP: ${v.lsp ? 'OK' : 'FAIL'}`);
       if (v.issues.length > 0) {
         lines.push(`  Issues: ${v.issues.join(', ')}`);
       }

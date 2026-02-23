@@ -93,6 +93,39 @@ function callCounts(state: HudState): string {
   return parts.join(' ');
 }
 
+// ── Metrics Helpers ───────────────────────────────────────
+
+// Format milliseconds as "19m" or "2h15m"
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60_000);
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`;
+  }
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${hours}h${minutes}m` : `${hours}h`;
+}
+
+// Format USD cost as "$1.24"
+function formatCost(usd: number): string {
+  return `$${usd.toFixed(2)}`;
+}
+
+// Compose the metrics footer line
+function metricsLine(state: HudState, config: HudConfig): string {
+  const parts: string[] = [];
+  if (state.sessionDuration) {
+    parts.push(`session:${state.sessionDuration}`);
+  }
+  if (config.elements.showCost) {
+    parts.push(`${formatCost(state.estimatedCost)}`);
+  }
+  if (config.elements.showCache) {
+    parts.push(`cache:${Math.round(state.cacheHitRate)}%`);
+  }
+  return parts.join(' | ');
+}
+
 // ── Preset Renderers ──────────────────────────────────────
 
 function renderMinimal(state: HudState, config: HudConfig): string {
@@ -155,6 +188,12 @@ function renderFocused(state: HudState, config: HudConfig): string[] {
     lines.push(...agentTree(state.agents, config.elements.agentsMaxLines));
   }
 
+  // Footer: session analytics
+  if (config.elements.sessionAnalytics) {
+    const ml = metricsLine(state, config);
+    if (ml) lines.push(ml);
+  }
+
   return lines;
 }
 
@@ -206,6 +245,20 @@ function renderFull(state: HudState, config: HudConfig): string[] {
   const tp = taskProgress(state.tasksCompleted, state.tasksTotal);
   if (tp) footerParts.push(tp);
   if (footerParts.length > 0) lines.push(footerParts.join(' | '));
+
+  // Metrics footer: session duration, cost, cache rate
+  if (state.metrics) {
+    const dur = formatDuration(state.metrics.sessionDuration);
+    const cost = formatCost(state.estimatedCost);
+    const cacheRate = Math.round(state.cacheHitRate);
+    lines.push(`session:${dur} | 💰${cost} | 💾${cacheRate}% cache`);
+  }
+
+  // Rate limit display
+  if (config.elements.rateLimits && state.metrics) {
+    const { hourlyPercent, weeklyPercent } = state.metrics.rateLimit;
+    lines.push(`rate: ${hourlyPercent}% hourly | ${weeklyPercent}% weekly`);
+  }
 
   return lines;
 }

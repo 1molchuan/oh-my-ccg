@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import type { RpiState, ModeState, RalphState, TeamState, AutopilotState, RpiPhase } from '../types.js';
+import type { RpiState, ModeState, RalphState, TeamState, AutopilotState, AutopilotCompositeState, TeamRalphState, RpiPhase } from '../types.js';
 
 export class StateManager {
   private readonly stateDir: string;
@@ -160,13 +160,57 @@ export class StateManager {
     return state;
   }
 
+  initAutopilotComposite(linkedRalph: boolean, linkedTeam: boolean): AutopilotCompositeState {
+    const state: AutopilotCompositeState = {
+      mode: 'autopilot',
+      active: true,
+      rpiPhase: 'init',
+      autoTransition: true,
+      linkedRalph,
+      linkedTeam,
+      contextPercent: 0,
+      phasesCompleted: [],
+      currentAction: null,
+      startedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveModeState('autopilot', state);
+    return state;
+  }
+
+  initTeamRalph(teamName: string, maxIterations: number, totalTasks: number): TeamRalphState {
+    const state: TeamRalphState = {
+      mode: 'ralph',
+      active: true,
+      iteration: 0,
+      maxIterations,
+      lastVerification: null,
+      linkedTeam: {
+        enabled: true,
+        teamName,
+        workers: 0,
+        completedTasks: 0,
+        totalTasks,
+      },
+      startedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveModeState('ralph', state);
+    return state;
+  }
+
   // ── Queries ────────────────────────────────────────
 
   isAnyModeActive(): boolean {
-    for (const mode of ['ralph', 'team', 'autopilot']) {
+    for (const mode of ['ralph', 'team', 'autopilot', 'autopilot-composite', 'ralph-team']) {
       const state = this.getModeState(mode);
       if (state?.active) return true;
     }
+    // Also check composite states stored under their base mode keys
+    const autopilot = this.getModeState<AutopilotCompositeState>('autopilot');
+    if (autopilot?.active) return true;
+    const ralph = this.getModeState<TeamRalphState>('ralph');
+    if (ralph?.active) return true;
     return false;
   }
 
@@ -174,7 +218,23 @@ export class StateManager {
     const active: string[] = [];
     for (const mode of ['ralph', 'team', 'autopilot']) {
       const state = this.getModeState(mode);
-      if (state?.active) active.push(mode);
+      if (state?.active) {
+        // Annotate composite modes with a suffix
+        const autopilotState = mode === 'autopilot'
+          ? this.getModeState<AutopilotCompositeState>('autopilot')
+          : null;
+        const ralphState = mode === 'ralph'
+          ? this.getModeState<TeamRalphState>('ralph')
+          : null;
+
+        if (autopilotState?.active && 'phasesCompleted' in autopilotState) {
+          active.push('autopilot-composite');
+        } else if (ralphState?.active && 'linkedTeam' in ralphState) {
+          active.push('ralph-team');
+        } else {
+          active.push(mode);
+        }
+      }
     }
     return active;
   }

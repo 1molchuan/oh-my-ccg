@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import type { RpiPhase } from '../types.js';
+import type { RpiPhase, HudMetrics } from '../types.js';
+import { HudMetricsCollector } from './metrics.js';
 
 export interface HudState {
   // RPI
@@ -34,6 +35,12 @@ export interface HudState {
   toolCalls: number;
   agentCalls: number;
   skillCalls: number;
+
+  // Metrics
+  metrics: HudMetrics | null;
+  sessionDuration: string;
+  estimatedCost: number;
+  cacheHitRate: number;
 }
 
 export interface AgentInfo {
@@ -71,6 +78,21 @@ export function collectHudState(workDir: string, transcriptData?: Record<string,
   // Context from transcript
   const contextPercent = (transcriptData?.context_window as number) ?? 0;
 
+  // Metrics
+  const collector = new HudMetricsCollector(stateDir);
+  let metrics: HudMetrics | null = null;
+  let sessionDuration = '';
+  let estimatedCost = 0;
+  let cacheHitRate = 0;
+  try {
+    metrics = collector.getMetrics();
+    sessionDuration = formatSessionDuration(metrics.sessionDuration);
+    estimatedCost = metrics.estimatedCost;
+    cacheHitRate = metrics.cacheHitRate;
+  } catch {
+    // metrics unavailable — leave defaults
+  }
+
   return {
     rpiPhase: (rpi?.phase as RpiPhase) ?? null,
     changeName: (rpi?.changeName as string) ?? null,
@@ -98,5 +120,21 @@ export function collectHudState(workDir: string, transcriptData?: Record<string,
     toolCalls: (hudState?.toolCalls as number) ?? 0,
     agentCalls: (hudState?.agentCalls as number) ?? 0,
     skillCalls: (hudState?.skillCalls as number) ?? 0,
+
+    metrics,
+    sessionDuration,
+    estimatedCost,
+    cacheHitRate,
   };
+}
+
+// Format milliseconds as "19m" or "2h15m"
+function formatSessionDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60_000);
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`;
+  }
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${hours}h${minutes}m` : `${hours}h`;
 }

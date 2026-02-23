@@ -31,6 +31,24 @@ export class TeamOrchestrator {
   }
 
   /**
+   * Initialize team mode linked to a Ralph loop for composite orchestration.
+   * Each task will be wrapped in a ralph execute->verify->fix cycle.
+   */
+  createTeamWithRalph(teamName: string, tasks: TeamTask[], ralphMaxIterations = 10): TeamState {
+    this.tasks = tasks;
+    const teamState = this.state.initTeam(teamName, tasks.length);
+
+    // Record the ralph link in state
+    const stored = this.state.getModeState<TeamState & { linkedRalph?: { enabled: boolean; maxIterations: number } }>('team');
+    if (stored) {
+      stored.linkedRalph = { enabled: true, maxIterations: ralphMaxIterations };
+      this.state.saveModeState('team', stored);
+    }
+
+    return teamState;
+  }
+
+  /**
    * Get routing recommendations for each task.
    * Frontend tasks route to Gemini-enhanced workers, backend to Codex.
    */
@@ -93,6 +111,17 @@ export class TeamOrchestrator {
       failed: this.tasks.filter(t => t.status === 'failed').length,
       total: this.tasks.length,
     };
+  }
+
+  /**
+   * Get the worktree path assigned to a task (stub for future worktree integration).
+   * Returns null until worktree support is fully implemented.
+   */
+  getWorktreeAssignment(taskId: string): string | null {
+    // Worktree integration is not yet implemented.
+    // Future: look up WorktreeInfo by taskId and return its path.
+    void taskId;
+    return null;
   }
 
   /**

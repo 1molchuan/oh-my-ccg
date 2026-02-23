@@ -36,6 +36,7 @@ export const DEFAULT_CONFIG: OhMyCcgConfig = {
   version: '1.0.0',
   hud: DEFAULT_HUD_CONFIG,
   defaultModel: 'sonnet',
+  locale: 'zh',
   openspec: {
     enabled: true,
     autoInit: false,
@@ -46,9 +47,18 @@ export const DEFAULT_CONFIG: OhMyCcgConfig = {
   },
   ralph: {
     maxIterations: 10,
+    linkedTeam: false,
   },
   autopilot: {
     contextThreshold: 80,
+    linkedRalph: true,
+    linkedTeam: true,
+  },
+  worktree: {
+    enabled: false,
+    baseDir: '../.oh-my-ccg-worktrees',
+    autoCleanup: true,
+    maxWorktrees: 5,
   },
 };
 
