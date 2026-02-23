@@ -1,0 +1,21 @@
+{
+  "name": "oh-my-ccg",
+  "version": "1.0.0",
+  "description": "统一 Claude Code 插件 — OMC 编排 + CCG 多模型协作 + gudaspec RPI 工作流哲学",
+  "author": {
+    "name": "oh-my-ccg contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "multi-model",
+    "codex",
+    "gemini",
+    "orchestration",
+    "rpi"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}

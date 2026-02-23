@@ -202,6 +202,30 @@ oh-my-ccg/
 
 ---
 
+## 🙏 致谢
+
+oh-my-ccg 站在三个优秀项目的肩膀上，它们是本项目的核心灵感来源：
+
+### [ccg-workflow](https://www.npmjs.com/package/ccg-workflow)
+
+CCG（Claude + Codex + Gemini）多模型协作工作流的原创实现。提出了"并行双模型交叉验证"的核心理念——Codex 负责后端/逻辑/安全分析，Gemini 负责前端/设计/大上下文分析，两者并行运行互相弥补盲点。oh-my-ccg 的整个多模型路由架构直接源于此项目的设计哲学。
+
+### [openspec](https://www.npmjs.com/package/@fission-ai/openspec)
+
+OpenSpec（OPSX）约束驱动开发规范。提出了"研究产出约束集而非信息堆砌"、"零决策可执行计划"、"实现是纯机械执行"等核心原则。RPI（Research → Plan → Implement）工作流的哲学基础正是来自 OpenSpec 的 gudaspec 设计思想，让 AI 辅助开发从"猜测式"走向"约束驱动式"。
+
+### [oh-my-claudecode](https://github.com/disler/oh-my-claude-code)
+
+OMC（oh-my-claudecode）多代理编排层。构建了完整的专业代理目录（explore/analyst/planner/architect/executor 等 20+ 角色）、MCP 工具路由规则、Team 并行执行框架、Ralph 持久循环模式，以及 Autopilot 全自动执行模式。oh-my-ccg 的代理系统和编排模式直接继承自 OMC 的架构设计。
+
+---
+
+> **oh-my-ccg = oh-my-claudecode 代理基础设施 × ccg-workflow 多模型协作 × openspec 约束驱动哲学**
+>
+> 三者合一，形成一个内聚的、生产级的 Claude Code 插件。
+
+---
+
 ## 📄 License
 
 [MIT](LICENSE) © 2026 1molchuan

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "oh-my-ccg",
+  "description": "Unified Claude Code plugin — OMC agent orchestration + CCG multi-model collaboration + gudaspec RPI philosophy",
+  "owner": {
+    "name": "oh-my-ccg"
+  },
+  "plugins": [
+    {
+      "name": "oh-my-ccg",
+      "description": "Unified Claude Code plugin merging OMC orchestration (15 agents, 16 skills), CCG multi-model collaboration (Codex + Gemini), and gudaspec RPI workflow philosophy.",
+      "version": "1.0.0",
+      "author": {
+        "name": "oh-my-ccg contributors"
+      },
+      "source": "./",
+      "category": "productivity",
+      "homepage": "",
+      "tags": [
+        "multi-agent",
+        "orchestration",
+        "multi-model",
+        "rpi-workflow",
+        "codex",
+        "gemini"
+      ]
+    }
+  ],
+  "version": "1.0.0"
+}
