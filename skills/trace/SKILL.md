@@ -1,6 +1,6 @@
 ---
 name: trace
-description: Show agent flow trace timeline and summary
+description: 显示 Agent 流程追踪时间线与摘要
 ---
 
 # oh-my-ccg Trace

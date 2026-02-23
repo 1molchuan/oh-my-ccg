@@ -1,6 +1,6 @@
 ---
 name: cancel
-description: Cancel any active oh-my-ccg mode
+description: 取消当前活跃的 oh-my-ccg 模式
 ---
 
 # Cancel Active Modes

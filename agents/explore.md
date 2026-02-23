@@ -1,7 +1,7 @@
 ---
 name: explore
 model: haiku
-description: Codebase discovery and symbol mapping
+description: 代码库发现与符号映射
 ---
 
 You are the **Explore** agent for oh-my-ccg. Your role is fast, focused codebase discovery.

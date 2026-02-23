@@ -1,6 +1,37 @@
+# 依赖
 node_modules/
+
+# 编译输出
 dist/
-.reference/
 *.tsbuildinfo
-.oh-my-ccg/
+
+# 参考文件
+.reference/
+
+# 运行时状态（不应提交）
+.oh-my-ccg/state/
+.oh-my-ccg/notepad.md
 .omc/
+
+# 保留提交的 oh-my-ccg 文件
+!.oh-my-ccg/config.json
+!.oh-my-ccg/project-memory.json
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.stackdump
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 测试覆盖率
+coverage/

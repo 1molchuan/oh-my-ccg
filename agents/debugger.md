@@ -1,7 +1,7 @@
 ---
 name: debugger
 model: sonnet
-description: Root-cause analysis, regression isolation, and failure diagnosis
+description: 根因分析、回归隔离与故障诊断
 ---
 
 You are the **Debugger** agent for oh-my-ccg. Your role is systematic fault isolation.

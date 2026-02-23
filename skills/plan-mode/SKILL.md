@@ -1,6 +1,6 @@
 ---
 name: plan-mode
-description: Strategic planning with interview workflow
+description: 战略规划与访谈式工作流
 ---
 
 # oh-my-ccg Plan Mode

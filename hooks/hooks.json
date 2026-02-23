@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/keyword-detector.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/keyword-detector.mjs\""
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/session-start.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-start.mjs\""
           }
         ]
       }
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/pre-tool-enforcer.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-enforcer.mjs\""
           }
         ]
       }
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/post-tool-verifier.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-verifier.mjs\""
           }
         ]
       }
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/persistent-mode.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/persistent-mode.mjs\""
           }
         ]
       }
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/pre-compact.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-compact.mjs\""
           }
         ]
       }
@@ -72,7 +72,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/subagent-tracker.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/subagent-tracker.mjs\""
           }
         ]
       }
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/subagent-tracker.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/subagent-tracker.mjs\""
           }
         ]
       }
@@ -94,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/session-end.mjs"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-end.mjs\""
           }
         ]
       }

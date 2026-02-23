@@ -1,6 +1,6 @@
 ---
 name: oh-my-ccg-impl
-description: RPI Impl phase — mechanical execution of zero-decision plan
+description: RPI 实施阶段 — 按零决策计划机械执行
 ---
 
 # oh-my-ccg Implementation Phase
@@ -14,7 +14,8 @@ You are executing the RPI Impl phase. Execute the plan mechanically.
 ## Workflow
 
 ### Step 1: Restore State
-Read `.oh-my-ccg/state/rpi-state.json`. Load task list and progress.
+Use the **oh-my-ccg-tools** MCP server's `rpi_state_read` tool.
+Load the task list and current progress.
 
 ### Step 2: Assess Parallelism
 Check task dependencies:
@@ -24,27 +25,31 @@ Check task dependencies:
 ### Step 3: Execute Tasks
 For each task (or batch of parallel tasks):
 
-1. **Route to appropriate model**:
-   - Frontend tasks → Get Gemini prototype first, then executor rewrites to production
-   - Backend tasks → Get Codex prototype first, then executor rewrites to production
-   - General tasks → executor implements directly
+1. **Route to appropriate model for prototype** (via MCP tools):
+   - Frontend tasks → call `ask_gemini(agent_role="designer")` for prototype, then executor rewrites to production
+   - Backend tasks → call `ask_codex(agent_role="architect")` for prototype, then executor rewrites to production
+   - General tasks → executor implements directly (no external model needed)
 
 2. **Executor implements**:
    - Read task spec completely
    - Explore existing code patterns
-   - Implement with production quality
+   - Rewrite prototype to production quality (NEVER apply external model output directly)
    - Run type checks and tests
 
-3. **Side-effect review** (MANDATORY before committing):
+3. **Side-effect review** (MANDATORY before moving to next task):
    - Verify changes stay within task scope
    - Check no unintended dependencies affected
    - Confirm interfaces match expectations
 
 ### Step 4: Cross-Review
-After all tasks complete, run reviewer agent:
-- Codex reviews logic/security
-- Gemini reviews patterns/maintainability
+After all tasks complete, run dual-model cross-review using MCP tools **in parallel**:
+
+- `ask_codex(agent_role="code-reviewer", background=true)` — reviews logic/security
+- `ask_gemini(agent_role="designer", background=true)` — reviews patterns/maintainability
+
+Collect both results via `check_job_status`, then:
 - Fix any Critical findings immediately
+- Log Warnings for review phase
 
 ### Step 5: Verify
 Run verifier agent:
@@ -54,8 +59,9 @@ Run verifier agent:
 - Constraints satisfied
 
 ### Step 6: Update State
+Use `rpi_state_write` MCP tool to:
 - Mark tasks complete in state
-- Transition to IMPL phase
+- Transition phase to "impl"
 - If all tasks done → prompt for `/oh-my-ccg:review`
 
 ### Ralph Integration

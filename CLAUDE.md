@@ -54,12 +54,111 @@ Multi-model routing is automatic — agents call ask_codex/ask_gemini MCP tools 
 
 <multi_model_routing>
 Tasks are automatically routed based on domain:
-- **Backend/Logic/Security** → Codex (gpt-5.3-codex via codeagent-wrapper)
-- **Frontend/UI/Design** → Gemini (gemini-3-pro-preview via codeagent-wrapper)
+- **Backend/Logic/Security** → Codex (gpt-5.3-codex)
+- **Frontend/UI/Design** → Gemini (gemini-3-pro-preview)
 - **Cross-validation** → Both in parallel (MANDATORY for reviews)
 
 External model outputs are advisory only — never applied directly. The executor agent rewrites all prototypes to production-grade code matching project conventions.
 </multi_model_routing>
+
+<mcp_architecture>
+## MCP Server Architecture & Dependencies
+
+oh-my-ccg 通过 3 个 MCP 服务器提供工具能力，定义在 `.mcp.json` 中：
+
+```
+oh-my-ccg-tools   → bridge/mcp-server.cjs   → 纯 Node.js，无外部依赖
+oh-my-ccg-codex   → bridge/codex-server.cjs  → 需要 codex CLI (npm i -g @openai/codex)
+oh-my-ccg-gemini  → bridge/gemini-server.cjs → 需要 gemini CLI (npm i -g @google/gemini-cli)
+```
+
+### 重要：MCP 服务器加载机制
+
+- Bridge 服务器是 `.cjs` 文件，**不需要编译**，Node.js 直接运行
+- MCP 服务器在 **Claude Code 启动时加载**，修改 bridge 文件后需要 **重启 Claude Code** 才能生效
+- `.mcp.json` 使用 `${CLAUDE_PLUGIN_ROOT}` 变量，由 Claude Code 插件系统自动解析为插件安装目录
+
+### MCP 工具可用性检测
+
+在调用 MCP 工具之前，你必须检测工具是否可用：
+
+1. **oh-my-ccg-tools** 工具（`rpi_state_read` 等）：只要插件加载成功就可用，无外部依赖
+2. **oh-my-ccg-codex** 工具（`ask_codex`）：需要 `codex` CLI 已全局安装
+3. **oh-my-ccg-gemini** 工具（`ask_gemini`）：需要 `gemini` CLI 已全局安装
+
+### 降级策略
+
+如果 MCP 工具不可用（插件未加载或 CLI 未安装），按以下策略降级：
+
+| 工具 | 降级方案 |
+|------|----------|
+| `rpi_state_read/write` | 直接用 Read/Write 操作 `.oh-my-ccg/state/rpi-state.json` 文件 |
+| `mode_state_read/write` | 直接用 Read/Write 操作对应的 state JSON 文件 |
+| `notepad_read/write` | 直接用 Read/Write 操作 `.oh-my-ccg/notepad.md` 文件 |
+| `project_memory_read/write` | 直接用 Read/Write 操作 `.oh-my-ccg/project-memory.json` 文件 |
+| `ask_codex` | 跳过 Codex 分析，仅用 Claude Agent 完成对应任务（如架构审查、代码审查等） |
+| `ask_gemini` | 跳过 Gemini 分析，仅用 Claude Agent 完成对应任务（如设计审查、文档编写等） |
+
+**核心原则**：oh-my-ccg 的所有功能在没有外部模型时仍可运行（仅用 Claude），外部模型是增强而非必需。
+</mcp_architecture>
+
+<tool_routing>
+## Tool Routing — How to Call External Models
+
+Each MCP server (oh-my-ccg-codex, oh-my-ccg-gemini) provides 5 个工具：
+`ask_*`, `wait_for_job`, `check_job_status`, `kill_job`, `list_jobs`
+
+### Codex (Backend/Logic/Security)
+**oh-my-ccg-codex** MCP server — 5 tools:
+- `ask_codex`: 发送分析请求。参数：`agent_role`, `prompt`, `context_files`, `background`, `model`, `reasoning_effort`
+- `wait_for_job(job_id, timeout_ms)`: 阻塞等待后台任务完成（指数退避轮询）
+- `check_job_status(job_id)`: 非阻塞状态检查
+- `kill_job(job_id, signal)`: 终止运行中的任务
+- `list_jobs(status_filter, limit)`: 列出任务
+
+Roles: architect, planner, critic, analyst, code-reviewer, security-reviewer, test-engineer
+
+### Gemini (Frontend/Design/Large Context)
+**oh-my-ccg-gemini** MCP server — 5 tools:
+- `ask_gemini`: 发送分析请求。参数：`agent_role`, `prompt`, `files`, `background`, `model`
+- `wait_for_job(job_id, timeout_ms)`: 阻塞等待后台任务完成（指数退避轮询）
+- `check_job_status(job_id)`: 非阻塞状态检查
+- `kill_job(job_id, signal)`: 终止运行中的任务
+- `list_jobs(status_filter, limit)`: 列出任务
+
+Roles: designer, writer, vision
+Model fallback chain: gemini-3-pro-preview → gemini-3-flash-preview → gemini-2.5-pro → gemini-2.5-flash
+
+### Parallel Cross-Validation Pattern (MANDATORY for reviews)
+在**同一条消息**中并行调用两个 MCP 工具：
+```
+Step 1: 同时发起（单条消息）
+  ask_codex(agent_role="code-reviewer", background=true)  → job_id_1
+  ask_gemini(agent_role="designer", background=true)       → job_id_2
+
+Step 2: 并行等待结果（单条消息）
+  wait_for_job(job_id_1)  → codex_result   (oh-my-ccg-codex server)
+  wait_for_job(job_id_2)  → gemini_result  (oh-my-ccg-gemini server)
+
+Step 3: 综合两者结果
+```
+
+### State Management
+Use the **oh-my-ccg-tools** MCP server:
+- `rpi_state_read` / `rpi_state_write` — RPI phase state (persists across /clear)
+- `mode_state_read` / `mode_state_write` — Orchestration mode state (ralph, team, autopilot)
+- `notepad_read` / `notepad_write` — Session memory
+- `project_memory_read` / `project_memory_write` — Persistent project memory
+
+### OpenSpec (Optional CLI)
+If OpenSpec CLI is available, use directly via Bash:
+- `npx openspec new change "<name>"`
+- `npx openspec instructions <id> --change "<name>"`
+If OpenSpec is not installed, skip these steps and manage artifacts via file system.
+
+### File Operations
+Use Claude's native tools (Read, Write, Edit, Glob, Grep) — no MCP wrapper needed.
+</tool_routing>
 
 <orchestration_modes>
 **Team** — Parallel execution with N workers for independent tasks:

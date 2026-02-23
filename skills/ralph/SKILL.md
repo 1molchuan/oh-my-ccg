@@ -1,6 +1,6 @@
 ---
 name: ralph
-description: Persistent execute-verify-fix loop until task completion
+description: 持久化执行-验证-修复循环，直到任务完成
 ---
 
 # oh-my-ccg Ralph Mode

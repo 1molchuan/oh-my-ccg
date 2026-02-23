@@ -1,6 +1,6 @@
 ---
 name: oh-my-ccg-plan
-description: RPI Plan phase — constraints to zero-decision executable plan
+description: RPI 计划阶段 — 约束集转化为零决策可执行计划
 ---
 
 # oh-my-ccg Plan Phase
@@ -14,20 +14,25 @@ You are executing the RPI Plan phase. Transform constraints into a zero-decision
 ## Workflow
 
 ### Step 1: Restore State
-Read `.oh-my-ccg/state/rpi-state.json`. Load constraints, decisions, and artifacts.
+Use the **oh-my-ccg-tools** MCP server's `rpi_state_read` tool.
+Load constraints, decisions, and artifacts from the persisted state.
 
 ### Step 2: Multi-Model Analysis (PARALLEL)
-Launch both models with the constraint set:
+Launch both models **simultaneously in a single message** using MCP tools:
 
-**Codex** (planner role):
-- Validate constraint feasibility
-- Suggest implementation approach for backend tasks
-- Identify technical risks
+**Codex** (planner role) — use `ask_codex` tool:
+- `agent_role`: "planner"
+- `prompt`: Include all constraints, ask for implementation approach and risk analysis
+- `context_files`: Key architecture files
+- `background`: true
 
-**Gemini** (designer role):
-- Validate frontend constraints
-- Suggest component decomposition
-- Identify UX risks
+**Gemini** (designer role) — use `ask_gemini` tool:
+- `agent_role`: "designer"
+- `prompt`: Include all constraints, ask for frontend decomposition and UX risks
+- `files`: Key UI/component files
+- `background`: true
+
+Then use `check_job_status` for both job IDs to collect results.
 
 ### Step 3: Task Decomposition
 Using the `planner` agent, decompose into ordered tasks:
@@ -47,12 +52,15 @@ Audit the plan for any remaining decisions:
 - Iterate until zero ambiguities remain
 
 ### Step 6: Generate Artifacts
-- Create specs/ documents (in openspec change dir if available)
-- Create design/ documents
-- Create tasks.md with full task list
-- Update RPI state with artifacts and PBT properties
+- Write specs/ documents using the Write tool (in OpenSpec change dir if available)
+- Write design/ documents using the Write tool
+- Write tasks.md with full task list
+- Use `rpi_state_write` MCP tool to update state with:
+  - Phase transition to "plan"
+  - Artifacts list
+  - PBT properties
+  - Task list
 
 ### Step 7: Transition
-- Transition RPI phase to PLAN
-- Report: task count, PBT properties, estimated scope
-- Instruct user to `/clear` then `/oh-my-ccg:impl`
+Report: task count, PBT properties, estimated scope.
+Instruct user to `/clear` then `/oh-my-ccg:impl`.

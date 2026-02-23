@@ -1,6 +1,6 @@
 ---
 name: deepinit
-description: Deep codebase initialization with hierarchical AGENTS.md
+description: 深度代码库初始化，生成分层 AGENTS.md 文档
 ---
 
 # oh-my-ccg Deep Init

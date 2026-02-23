@@ -20,7 +20,7 @@
     "gemini",
     "orchestration"
   ],
-  "author": "",
+  "author": "1molchuan",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.7.0",

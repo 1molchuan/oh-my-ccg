@@ -2,17 +2,20 @@
   "mcpServers": {
     "oh-my-ccg-tools": {
       "command": "node",
-      "args": ["bridge/mcp-server.cjs"],
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bridge/mcp-server.cjs"],
+      "cwd": "${CLAUDE_PLUGIN_ROOT}",
       "env": {}
     },
     "oh-my-ccg-codex": {
       "command": "node",
-      "args": ["bridge/codex-server.cjs"],
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bridge/codex-server.cjs"],
+      "cwd": "${CLAUDE_PLUGIN_ROOT}",
       "env": {}
     },
     "oh-my-ccg-gemini": {
       "command": "node",
-      "args": ["bridge/gemini-server.cjs"],
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bridge/gemini-server.cjs"],
+      "cwd": "${CLAUDE_PLUGIN_ROOT}",
       "env": {}
     }
   }

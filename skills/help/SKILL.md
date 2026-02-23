@@ -1,6 +1,6 @@
 ---
 name: help
-description: oh-my-ccg help and usage guide
+description: oh-my-ccg 帮助与使用指南
 ---
 
 # oh-my-ccg Help

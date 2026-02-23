@@ -1,6 +1,6 @@
 ---
 name: note
-description: Save session notes to notepad for compaction resilience
+description: 保存会话笔记到记事本，防止上下文压缩丢失
 ---
 
 # oh-my-ccg Note

@@ -1,51 +1,72 @@
 ---
 name: oh-my-ccg-init
-description: Initialize oh-my-ccg environment — verify OpenSpec, Codex, and Gemini
+description: 初始化 oh-my-ccg 环境 — 验证 MCP 服务器、Codex、Gemini
 ---
 
 # oh-my-ccg Environment Initialization
 
 You are executing the oh-my-ccg initialization skill. Follow these steps exactly:
 
-## Step 1: Verify External Tools
+## Step 1: Verify MCP Servers
 
-Check availability of required tools:
+Test connectivity of each plugin MCP server by calling their tools:
 
-1. **OpenSpec CLI**: Run `npx openspec --version`. If not available, warn but continue (optional dependency).
-2. **codeagent-wrapper**: Run `codeagent-wrapper --version`. If not available, warn that multi-model routing will be limited.
-3. **Codex backend**: Run `codeagent-wrapper --backend codex --version` or test with a simple prompt.
-4. **Gemini backend**: Run `codeagent-wrapper --backend gemini --version` or test with a simple prompt.
+1. **oh-my-ccg-tools**: Call `rpi_state_read` → confirms tools server is operational
+2. **oh-my-ccg-codex**: Call `ask_codex(agent_role="architect", prompt="ping")` → confirms Codex CLI is reachable
+3. **oh-my-ccg-gemini**: Call `ask_gemini(agent_role="designer", prompt="ping")` → confirms Gemini CLI is reachable
 
-## Step 2: Initialize State Directory
+Record which servers responded successfully.
 
-Create the state directory structure:
+## Step 2: Create State Directory
+
+Via Bash, create the directory structure:
 ```
-.oh-my-ccg/
-  state/
-  plans/
-  config.json (with defaults if not exists)
+mkdir -p .oh-my-ccg/state .oh-my-ccg/plans
 ```
 
-## Step 3: Initialize OpenSpec (if available)
+If `.oh-my-ccg/config.json` does not exist, create it with defaults:
+```json
+{
+  "hud": { "preset": "focused" }
+}
+```
 
-If OpenSpec CLI is available and project is not already initialized:
-- Run `npx openspec init --tools claude`
-- Report result
+## Step 3: Initialize RPI State
 
-## Step 4: Create Initial RPI State
+Use the **oh-my-ccg-tools** MCP server's `rpi_state_write` tool to write:
+```json
+{
+  "phase": "init",
+  "changeId": null,
+  "constraints": [],
+  "decisions": [],
+  "artifacts": [],
+  "history": []
+}
+```
 
-Create `.oh-my-ccg/state/rpi-state.json` with phase: "init".
+## Step 4: OpenSpec (Optional)
+
+Check if OpenSpec CLI is available:
+```bash
+npx openspec --version
+```
+- If available: run `npx openspec init --tools claude`
+- If not available: skip (OpenSpec is an optional dependency)
 
 ## Step 5: Report Status
 
 Output a summary:
 ```
 oh-my-ccg Environment Status:
-  OpenSpec:  ✅/❌ (version or "not found")
-  Codex:     ✅/❌ (available or "not found")
-  Gemini:    ✅/❌ (available or "not found")
-  State Dir: ✅ Created
-  RPI State: ✅ Initialized (phase: init)
+  MCP Tools:  ✅/❌ (rpi_state_read responded)
+  Codex:      ✅/❌ (ask_codex responded)
+  Gemini:     ✅/❌ (ask_gemini responded)
+  OpenSpec:   ✅/❌ (version or "not installed — optional")
+  State Dir:  ✅ Created
+  RPI State:  ✅ Initialized (phase: init)
 ```
 
-If any critical tool is missing, provide installation instructions.
+If Codex or Gemini is unavailable, provide installation guidance:
+- Codex CLI: `npm install -g @openai/codex`
+- Gemini CLI: `npm install -g @google/gemini-cli`

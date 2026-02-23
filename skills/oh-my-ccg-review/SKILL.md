@@ -1,6 +1,6 @@
 ---
 name: oh-my-ccg-review
-description: Independent dual-model cross-review (available anytime)
+description: 独立双模型交叉审查（随时可用）
 ---
 
 # oh-my-ccg Review Phase
@@ -11,25 +11,26 @@ You are executing an independent dual-model cross-review. This can be run at any
 
 ### Step 1: Collect Artifacts
 Determine what to review:
-- If RPI state exists with a change: review that change's implementation
+- If RPI state exists with a change: use `rpi_state_read` MCP tool to load the change's implementation details
 - If git diff has changes: review the diff
 - Otherwise: ask user what to review
 
 ### Step 2: Dual-Model Review (PARALLEL — MANDATORY)
-Launch BOTH models in a single message:
+Launch BOTH models **in a single message** using MCP tools:
 
-**Codex** (code-reviewer role):
-- Logic correctness
-- Security vulnerabilities (OWASP Top 10)
-- Error handling completeness
-- API contract correctness
-- Performance hotspots
+**Codex** (code-reviewer role) — use `ask_codex` tool:
+- `agent_role`: "code-reviewer"
+- `prompt`: Include the code to review, ask for logic/security analysis
+- `context_files`: All changed files
+- `background`: true
 
-**Gemini** (designer role):
-- Code pattern consistency
-- Maintainability assessment
-- Component architecture (frontend)
-- Cross-module integration issues
+**Gemini** (designer role) — use `ask_gemini` tool:
+- `agent_role`: "designer"
+- `prompt`: Include the code to review, ask for pattern/maintainability analysis
+- `files`: All changed files
+- `background`: true
+
+Then use `check_job_status` for both job IDs to collect results.
 
 ### Step 3: Synthesize Findings
 Merge findings from both models:
@@ -60,3 +61,5 @@ Ask user:
 - **Fix**: Address Critical/Warning issues → loop back to executor
 - **Accept**: Archive the review, proceed
 - **Defer**: Note issues for later, proceed
+
+If fixing: use `rpi_state_write` MCP tool to record review findings and transition back to impl.
