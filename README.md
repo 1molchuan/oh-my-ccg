@@ -4,17 +4,19 @@
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![tests](https://img.shields.io/badge/tests-403_passed-brightgreen)](#开发)
 
-> 统一的 Claude Code 插件 — RPI 工作流 + 多模型编排 + 代理系统
+> 个人集成配置插件 — RPI 工作流状态机 + OMC 代理继承 + CCG 双模型路由
 
-oh-my-ccg 将 **gudaspec RPI 哲学**（约束驱动、零决策执行）、**OMC 代理基础设施**和 **CCG 多模型协作**整合为一个单一插件，让 Claude Code 具备生产级的软件开发能力。
+oh-my-ccg 是一个**个人集成配置插件**——把 [ccg-workflow](https://www.npmjs.com/package/ccg-workflow) 的双模型调用模式、[oh-my-claudecode](https://github.com/disler/oh-my-claude-code) 的代理系统、[openspec](https://www.npmjs.com/package/@fission-ai/openspec) 的约束驱动哲学，整合进一个统一的 Claude Code 插件配置中。
+
+它不是三者的替代品，而是站在它们肩膀上的聚合层。如果你已经在用 OMC 或 CCG，oh-my-ccg 主要带来的是 **RPI 阶段状态机**（跨 `/clear` 持久化）和把三套工作流统一进一个插件的便利性。
 
 ---
 
 ## ✨ 特性
 
 - **RPI 工作流** — Research → Plan → Implement，状态跨 `/clear` 持久化
-- **15 个专业代理** — 自动按任务类型路由到最合适的模型
-- **多模型自动路由** — 后端/逻辑/安全 → Codex，前端/UI/设计 → Gemini
+- **15 个专业代理** — 继承自 OMC 代理系统（20+ 角色的子集）
+- **多模型路由建议** — 按任务域建议路由（后端→Codex，前端→Gemini）——最终路由由 Claude 判断执行
 - **3 个 MCP 服务器** — oh-my-ccg-tools / oh-my-ccg-codex / oh-my-ccg-gemini
 - **8 个生命周期钩子** — SessionStart / UserPromptSubmit / PreToolUse 等
 - **16 个可调用技能** — autopilot / ralph / team / pipeline 等编排模式
@@ -86,6 +88,141 @@ npm run build
 /oh-my-ccg:impl
 /oh-my-ccg:review
 ```
+
+---
+
+## 🔀 与 OMC / CCG 的核心差异
+
+oh-my-ccg 是三者的聚合层，主要增量是**有状态的 RPI 多阶段工程流程**。以下是准确的能力对比：
+
+### 1. 有状态的 RPI 阶段机器
+
+**OMC** 拥有完整的代理系统（notepad 会话记忆、project-memory 跨会话记忆、原生 MCP ask_codex/ask_gemini），可以完成几乎所有任务——但它没有强制 Research→Plan→Implement 的顺序约束，也没有跨 `/clear` 的工程级阶段进度记录。
+
+**CCG** 以 bash 包装器形式提供双模型调用，同样没有多阶段工作流状态。
+
+oh-my-ccg 引入了**形式化的阶段状态机**：
+
+```
+init → research → plan → impl → review
+```
+
+每个阶段强制完成后才能进入下一阶段，状态持久化在 `.oh-my-ccg/state/rpi-state.json`。执行 `/clear` 清空上下文后，下一个命令会自动从断点恢复，**不会丢失任何工程进度**。
+
+---
+
+### 2. 约束驱动而非任务驱动
+
+**OMC** 和 **CCG** 都是"给我做 X"式的任务驱动模型——你描述目标，模型直接实现。OMC 的各代理可以手动组织约束提取流程，但没有在工作流层面强制要求。
+
+oh-my-ccg 在任务开始前强制经过一个**约束提取阶段**：
+
+```
+需求描述
+    ↓ (research phase)
+约束集（Hard / Soft）
+    ├── C001 [Hard] 认证 token 必须在 30 分钟后过期
+    │           验证标准：单元测试 auth/token.test.ts
+    ├── C002 [Hard] 密码必须通过 bcrypt 哈希存储
+    │           验证标准：代码审查无明文存储
+    └── C003 [Soft] 支持第三方 OAuth 登录（优先级低）
+```
+
+每个约束都有分类（Hard/Soft）和可验证标准。这些约束在整个 plan 和 impl 阶段作为验收条件，防止实现偏离需求。
+
+---
+
+### 3. 零决策计划原则
+
+**OMC** 的 planner 代理可以产出执行方向和任务列表，手动使用时也可做到详细规划；但没有在工作流层面强制要求"歧义消除后才能进入实现"。
+**CCG** 没有专门的 plan 阶段，直接进入双模型原型生成。
+
+oh-my-ccg 的 plan 阶段有一个**强制歧义消除审计**：
+
+```
+任务拆解完成
+    ↓
+歧义检查（AmbiguityAudit）：
+  "认证中间件应放在哪个层？" → 必须在此阶段解答，不能留到实现时
+  "token 刷新策略是什么？" → 必须在此阶段确定
+    ↓
+零歧义 → 生成 tasks.md（每个任务指定精确文件、函数、测试）
+    ↓
+进入 impl（纯机械执行，无设计决策）
+```
+
+> 计划阶段还会同步提取 **PBT（属性测试）不变量**，每个约束对应可自动化验证的属性。
+
+---
+
+### 4. 原型-重写分离模式
+
+**CCG** 的外部模型输出（Codex/Gemini 生成的代码）需要人工判断是否采用。
+**OMC** 的 executor 直接实现，不借助外部模型原型。
+
+oh-my-ccg 建立了明确的**两阶段代码生成流程**：
+
+```
+外部模型（Codex/Gemini）生成原型
+    ↓  （原型仅作参考，禁止直接应用）
+executor 代理重写 → 生产级代码
+    ↓
+side-effect review（强制副作用检查）：
+  - 变更是否超出任务范围？
+  - 是否影响未预期的依赖？
+  - 接口是否与预期一致？
+```
+
+外部模型的输出是**有价值的设计参考**，但最终代码必须由 Claude executor 按照项目约定重写，确保风格一致性和质量可控。
+
+---
+
+### 5. 交叉验证严重性升级
+
+**CCG** 的双模型审查结果是两份独立报告，合并方式由用户自行判断。
+
+oh-my-ccg 的 review 阶段有一条**自动升级规则**：
+
+```
+Codex 发现: [Warning] 缺少输入验证 at auth/login.ts:42
+Gemini 发现: [Warning] 缺少输入验证 at auth/login.ts:42
+                          ↓
+合并后自动升级: [Critical] 缺少输入验证（双模型交叉确认）
+```
+
+被**两个模型同时报告的问题**自动升级为 Critical 级别，反映了该问题具有更高的客观置信度。
+
+---
+
+### 对比总结
+
+| 能力 | OMC | CCG | oh-my-ccg |
+|------|-----|-----|-----------|
+| 多代理编排 | ✅ 完整（20+ 角色） | ❌ | ✅ 继承 OMC（15 角色子集） |
+| 双模型并行调用 | ✅ 原生 MCP | ✅ bash 包装 | ✅ 原生 MCP（同 OMC） |
+| RPI 阶段状态机 | ❌ | ❌ | ✅ 新增 |
+| 约束集提取（Markdown 工作流约定） | ❌（可手动） | ❌ | ✅ 新增 |
+| 零决策计划强制（Markdown 工作流约定） | ❌（可手动） | ❌ | ✅ 新增 |
+| 原型-重写分离 | ❌ | ⚠️ 建议 | ✅ 强制（Markdown 约定） |
+| PBT 属性追踪 | ❌ | ❌ | ✅ 新增（Markdown 约定） |
+| 交叉验证严重性升级 | ❌ | ❌ | ✅ 新增（Markdown 约定） |
+| `/clear` 后阶段恢复 | ❌ | ❌ | ✅ 新增 |
+| 无外部模型降级运行 | ✅ | ❌ | ✅ 继承 |
+
+> **注**：标注"Markdown 工作流约定"的能力是通过 CLAUDE.md 提示词约定实现的，依赖 Claude 遵循指示，不是代码层面的强制约束。
+
+---
+
+## ⚠️ 局限性与不足
+
+坦白说，这个项目还远不完美：
+
+- **未经真实项目验证**：RPI 工作流在复杂真实项目中的有效性尚未充分测试，目前更多是理论上合理的工作流设计。
+- **代理定义是 Markdown，不是可执行代码**：`agents/` 和 `skills/` 目录下都是 Markdown 工作流描述文件，实际执行仍依赖 Claude Code 读取并遵循，不能保证 Claude 每次都完全照做。
+- **与 OMC 高度重叠**：如果你已经安装了 oh-my-claudecode，oh-my-ccg 的大部分代理功能你已经有了，核心增量只有 RPI 状态机和三套配置的整合。
+- **MCP bridge 是对 CLI 的简单包装**：oh-my-ccg-codex 和 oh-my-ccg-gemini 本质上和 OMC 的 MCP 工具做同样的事，没有实质性技术创新。
+- **单元测试覆盖类型逻辑，无集成测试**：403 个测试验证 TypeScript 类型和状态机逻辑，没有覆盖与真实 Claude Code 环境的集成行为。
+- **HUD 功能依赖 Claude 遵循提示词**：HUD 状态栏的渲染是通过提示词约定实现的，不是 Claude Code 的原生 UI 扩展。
 
 ---
 
@@ -220,9 +357,10 @@ OMC（oh-my-claudecode）多代理编排层。构建了完整的专业代理目�
 
 ---
 
-> **oh-my-ccg = oh-my-claudecode 代理基础设施 × ccg-workflow 多模型协作 × openspec 约束驱动哲学**
+> **oh-my-ccg = OMC 代理系统 + CCG 双模型调用 + OpenSpec RPI 工作流，整合在一个插件配置里。**
 >
-> 三者合一，形成一个内聚的、生产级的 Claude Code 插件。
+> 如果你觉得三套系统分别安装和配置很繁琐，这个项目把它们合在一起。
+> 如果你只需要其中一套，直接用原版就好。
 
 ---
 
